@@ -1,0 +1,18 @@
+[package]
+name = "srun-cli"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+base64 = "0.21.5"
+clap = "4.4.8"
+hmac = "0.12.1"
+json = "0.12.4"
+local-ip-address = "0.5.6"
+md-5 = "0.10.6"
+pnet = "0.34.0"
+regex = "1.10.2"
+reqwest = { version = "0.11", features = ["blocking"] }
+sha1 = "0.10.6"
