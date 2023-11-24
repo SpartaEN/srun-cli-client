@@ -40,6 +40,13 @@ pub fn process_cli() -> AppConfig {
                 .help("Site to trigger redirection"),
         )
         .arg(
+            Arg::new("quick-abort")
+                .short('q')
+                .long("quick-abort")
+                .action(ArgAction::SetTrue)
+                .help("Abort login process if the client is already logged in, will enable --redirect"),
+        )
+        .arg(
             Arg::new("config")
                 .short('c')
                 .long("config")
@@ -72,6 +79,7 @@ pub fn process_cli() -> AppConfig {
     let output = matches
         .get_one::<String>("output")
         .map(|s| s.to_lowercase());
+    let quick_abort = matches.get_flag("quick-abort");
 
     let mut app_config: AppConfig;
     match config_path {
@@ -90,6 +98,7 @@ pub fn process_cli() -> AppConfig {
                 Some("json") => OutputFormat::Json,
                 _ => OutputFormat::Plain,
             };
+            app_config.quick_abort = quick_abort;
         }
     }
 
@@ -107,6 +116,10 @@ pub fn process_cli() -> AppConfig {
             println!("Command must be provided");
             std::process::exit(1);
         }
+    }
+
+    if app_config.quick_abort {
+        app_config.redirect = true;
     }
 
     app_config

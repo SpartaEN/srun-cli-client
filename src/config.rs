@@ -19,6 +19,7 @@ pub struct AppConfig {
     pub interface: Option<String>,
     pub output: OutputFormat,
     pub command: Option<String>,
+    pub quick_abort: bool,
 }
 
 impl AppConfig {
@@ -32,6 +33,7 @@ impl AppConfig {
             interface: None,
             output: OutputFormat::Plain,
             command: None,
+            quick_abort: false,
         }
     }
 
@@ -51,6 +53,7 @@ impl AppConfig {
                     Some("json") => OutputFormat::Json,
                     _ => OutputFormat::Plain,
                 };
+                app_config.quick_abort = json["quick_abort"].as_bool().unwrap_or(false);
                 app_config
             }
             Err(_) => {

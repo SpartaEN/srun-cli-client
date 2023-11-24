@@ -40,6 +40,7 @@ fn main() {
                 &client,
                 app_config.redirect,
                 matches!(app_config.output, OutputFormat::Plain),
+                app_config.quick_abort,
             ) {
                 Ok(r) => {
                     resp = Some(r);
@@ -100,6 +101,7 @@ fn login(
     client: &SRUNClient,
     redirect: bool,
     output_warning: bool,
+    abort_if_online: bool,
 ) -> Result<Box<dyn SRUNResponse>, Box<dyn Error>> {
     // In some rare cases, http hijacking (redirection) must be triggered once to kick off BAS response
     if redirect {
@@ -107,6 +109,10 @@ fn login(
 
         if status && output_warning {
             println!("Portal testing returned 204 code, which indicates you're online.");
+        }
+
+        if status && abort_if_online {
+            std::process::exit(0);
         }
     }
 
