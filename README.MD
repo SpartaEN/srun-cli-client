@@ -1,6 +1,12 @@
-## srun-cli
+# srun-cli
 
-Yet another SRUN client written in Rust.
+[![.github/workflows/release.yml](https://github.com/SpartaEN/srun-cli-client/actions/workflows/release.yml/badge.svg)](https://github.com/SpartaEN/srun-cli-client/actions/workflows/release.yml)
+
+Yet another SRUN client written in Rust. (A rustlang toy project)
+
+## NOTE
+
+TLS feature is disabled by default to reduce artifact size for embeded devices. To enable TLS, you need to build the project with `--features reqwest-tls` flag.
 
 ## Usage
 
