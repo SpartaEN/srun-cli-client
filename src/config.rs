@@ -54,7 +54,8 @@ impl AppConfig {
                 app_config
             }
             Err(_) => {
-                panic!("Cannot open config file")
+                println!("Failed to read config file");
+                std::process::exit(1);
             }
         }
     }

@@ -1,6 +1,11 @@
 use core::fmt;
 
+use fmt::{Debug, Display};
 use json::{self, object};
+
+pub trait SRUNResponse: Debug + Display {
+    fn to_json(&self) -> String;
+}
 
 // TODO: Figure out types of numberic fields (Since my institution doesn't use them)
 
@@ -66,6 +71,48 @@ impl fmt::Display for SRUNQueryResponse {
     }
 }
 
+impl SRUNResponse for SRUNQueryResponse {
+    fn to_json(&self) -> String {
+        let obj = object! {
+            error: self.error.clone(),
+            online_ip: self.online_ip.clone(),
+            client_ip: self.client_ip.clone(),
+            ecode: self.ecode.clone(),
+            error_msg: self.error_msg.clone(),
+            res: self.res.clone(),
+            srun_ver: self.srun_ver.clone(),
+            st: self.st.clone(),
+            server_flag: self.server_flag.clone(),
+            add_time: self.add_time.clone(),
+            all_bytes: self.all_bytes.clone(),
+            billing_name: self.billing_name.clone(),
+            bytes_in: self.bytes_in.clone(),
+            bytes_out: self.bytes_out.clone(),
+            checkout_date: self.checkout_date.clone(),
+            domain: self.domain.clone(),
+            group_id: self.group_id.clone(),
+            keepalive_time: self.keepalive_time.clone(),
+            online_device_total: self.online_device_total.clone(),
+            online_ip6: self.online_ip6.clone(),
+            package_id: self.package_id.clone(),
+            products_id: self.products_id.clone(),
+            products_name: self.products_name.clone(),
+            real_name: self.real_name.clone(),
+            remain_bytes: self.remain_bytes.clone(),
+            remain_seconds: self.remain_seconds.clone(),
+            sum_bytes: self.sum_bytes.clone(),
+            sum_seconds: self.sum_seconds.clone(),
+            sysver: self.sysver.clone(),
+            user_balance: self.user_balance.clone(),
+            user_charge: self.user_charge.clone(),
+            user_mac: self.user_mac.clone(),
+            user_name: self.user_name.clone(),
+            wallet_balance: self.wallet_balance.clone(),
+        };
+        json::stringify(obj)
+    }
+}
+
 impl SRUNQueryResponse {
     pub fn from_string(s: String) -> Result<SRUNQueryResponse, Box<dyn std::error::Error>> {
         let j = json::parse(&s)?;
@@ -107,46 +154,6 @@ impl SRUNQueryResponse {
             wallet_balance: j["wallet_balance"].as_str().map(String::from),
         })
     }
-
-    pub fn to_json(&self) -> String {
-        let obj = object! {
-            error: self.error.clone(),
-            online_ip: self.online_ip.clone(),
-            client_ip: self.client_ip.clone(),
-            ecode: self.ecode.clone(),
-            error_msg: self.error_msg.clone(),
-            res: self.res.clone(),
-            srun_ver: self.srun_ver.clone(),
-            st: self.st.clone(),
-            server_flag: self.server_flag.clone(),
-            add_time: self.add_time.clone(),
-            all_bytes: self.all_bytes.clone(),
-            billing_name: self.billing_name.clone(),
-            bytes_in: self.bytes_in.clone(),
-            bytes_out: self.bytes_out.clone(),
-            checkout_date: self.checkout_date.clone(),
-            domain: self.domain.clone(),
-            group_id: self.group_id.clone(),
-            keepalive_time: self.keepalive_time.clone(),
-            online_device_total: self.online_device_total.clone(),
-            online_ip6: self.online_ip6.clone(),
-            package_id: self.package_id.clone(),
-            products_id: self.products_id.clone(),
-            products_name: self.products_name.clone(),
-            real_name: self.real_name.clone(),
-            remain_bytes: self.remain_bytes.clone(),
-            remain_seconds: self.remain_seconds.clone(),
-            sum_bytes: self.sum_bytes.clone(),
-            sum_seconds: self.sum_seconds.clone(),
-            sysver: self.sysver.clone(),
-            user_balance: self.user_balance.clone(),
-            user_charge: self.user_charge.clone(),
-            user_mac: self.user_mac.clone(),
-            user_name: self.user_name.clone(),
-            wallet_balance: self.wallet_balance.clone(),
-        };
-        json::stringify(obj)
-    }
 }
 
 #[derive(Debug)]
@@ -172,6 +179,24 @@ impl fmt::Display for SRUNChallengeResponse {
     }
 }
 
+impl SRUNResponse for SRUNChallengeResponse {
+    fn to_json(&self) -> String {
+        let obj = object! {
+            challenge: self.challenge.clone(),
+            client_ip: self.client_ip.clone(),
+            ecode: self.ecode.clone(),
+            error: self.error.clone(),
+            error_msg: self.error_msg.clone(),
+            expire: self.expire.clone(),
+            online_ip: self.online_ip.clone(),
+            res: self.res.clone(),
+            srun_ver: self.srun_ver.clone(),
+            st: self.st.clone(),
+        };
+        json::stringify(obj)
+    }
+}
+
 impl SRUNChallengeResponse {
     pub fn from_string(s: String) -> Result<SRUNChallengeResponse, Box<dyn std::error::Error>> {
         let j = json::parse(&s)?;
@@ -188,23 +213,6 @@ impl SRUNChallengeResponse {
             srun_ver: j["srun_ver"].as_str().unwrap().to_string(),
             st: j["st"].as_u64().unwrap(),
         })
-    }
-
-    #[allow(dead_code)]
-    pub fn to_json(&self) -> String {
-        let obj = object! {
-            challenge: self.challenge.clone(),
-            client_ip: self.client_ip.clone(),
-            ecode: self.ecode.clone(),
-            error: self.error.clone(),
-            error_msg: self.error_msg.clone(),
-            expire: self.expire.clone(),
-            online_ip: self.online_ip.clone(),
-            res: self.res.clone(),
-            srun_ver: self.srun_ver.clone(),
-            st: self.st.clone(),
-        };
-        json::stringify(obj)
     }
 }
 
@@ -246,6 +254,35 @@ impl fmt::Display for SRUNLoginResponse {
     }
 }
 
+impl SRUNResponse for SRUNLoginResponse {
+    fn to_json(&self) -> String {
+        let obj = object! {
+            client_ip: self.client_ip.clone(),
+            ecode: self.ecode.clone(),
+            error: self.error.clone(),
+            error_msg: self.error_msg.clone(),
+            online_ip: self.online_ip.clone(),
+            res: self.res.clone(),
+            srun_ver: self.srun_ver.clone(),
+            st: self.st.clone(),
+            server_flag: self.server_flag.clone(),
+            services_intf_server_ip: self.services_intf_server_ip.clone(),
+            services_intf_server_port: self.services_intf_server_port.clone(),
+            access_token: self.access_token.clone(),
+            checkout_date: self.checkout_date.clone(),
+            poly_msg: self.poly_msg.clone(),
+            real_name: self.real_name.clone(),
+            remain_flux: self.remain_flux.clone(),
+            remain_times: self.remain_times.clone(),
+            suc_msg: self.suc_msg.clone(),
+            sysver: self.sysver.clone(),
+            username: self.username.clone(),
+            wallet_balance: self.wallet_balance.clone(),
+        };
+        json::stringify(obj)
+    }
+}
+
 impl SRUNLoginResponse {
     pub fn from_string(s: String) -> Result<SRUNLoginResponse, Box<dyn std::error::Error>> {
         let j = json::parse(&s)?;
@@ -274,33 +311,6 @@ impl SRUNLoginResponse {
             wallet_balance: j["wallet_balance"].as_u64(),
         })
     }
-
-    pub fn to_json(&self) -> String {
-        let obj = object! {
-            client_ip: self.client_ip.clone(),
-            ecode: self.ecode.clone(),
-            error: self.error.clone(),
-            error_msg: self.error_msg.clone(),
-            online_ip: self.online_ip.clone(),
-            res: self.res.clone(),
-            srun_ver: self.srun_ver.clone(),
-            st: self.st.clone(),
-            server_flag: self.server_flag.clone(),
-            services_intf_server_ip: self.services_intf_server_ip.clone(),
-            services_intf_server_port: self.services_intf_server_port.clone(),
-            access_token: self.access_token.clone(),
-            checkout_date: self.checkout_date.clone(),
-            poly_msg: self.poly_msg.clone(),
-            real_name: self.real_name.clone(),
-            remain_flux: self.remain_flux.clone(),
-            remain_times: self.remain_times.clone(),
-            suc_msg: self.suc_msg.clone(),
-            sysver: self.sysver.clone(),
-            username: self.username.clone(),
-            wallet_balance: self.wallet_balance.clone(),
-        };
-        json::stringify(obj)
-    }
 }
 
 #[derive(Debug)]
@@ -325,6 +335,21 @@ impl fmt::Display for SRUNLogoutResponse {
     }
 }
 
+impl SRUNResponse for SRUNLogoutResponse {
+    fn to_json(&self) -> String {
+        let obj = object! {
+            client_ip: self.client_ip.clone(),
+            ecode: self.ecode.clone(),
+            error: self.error.clone(),
+            error_msg: self.error_msg.clone(),
+            online_ip: self.online_ip.clone(),
+            res: self.res.clone(),
+            srun_ver: self.srun_ver.clone(),
+        };
+        json::stringify(obj)
+    }
+}
+
 impl SRUNLogoutResponse {
     pub fn from_string(s: String) -> Result<SRUNLogoutResponse, Box<dyn std::error::Error>> {
         let j = json::parse(&s)?;
@@ -338,18 +363,5 @@ impl SRUNLogoutResponse {
             res: j["res"].as_str().unwrap().to_string(),
             srun_ver: j["srun_ver"].as_str().unwrap().to_string(),
         })
-    }
-
-    pub fn to_json(&self) -> String {
-        let obj = object! {
-            client_ip: self.client_ip.clone(),
-            ecode: self.ecode.clone(),
-            error: self.error.clone(),
-            error_msg: self.error_msg.clone(),
-            online_ip: self.online_ip.clone(),
-            res: self.res.clone(),
-            srun_ver: self.srun_ver.clone(),
-        };
-        json::stringify(obj)
     }
 }

@@ -2,139 +2,124 @@ mod cli;
 mod config;
 mod srun;
 
+use std::error::Error;
+
 use cli::process_cli;
 use config::OutputFormat;
+use json::object;
 use srun::client::SRUNClient;
+use srun::response::SRUNResponse;
 
 fn main() {
     let app_config = process_cli();
 
     let client = SRUNClient::from_app_config(&app_config);
 
+    let mut resp: Option<Box<dyn SRUNResponse>> = None;
+    let mut err: Option<Box<dyn Error>> = None;
+
     match app_config.command.unwrap().as_str() {
         "query" => {
-            let resp = client.query();
-            let r = match resp {
-                Ok(r) => r,
+            match query(&client) {
+                Ok(r) => {
+                    resp = Some(r);
+                }
                 Err(e) => {
-                    panic!("Failed to query: {}", e);
+                    err = Some(e);
                 }
             };
-            match app_config.output {
-                OutputFormat::Plain => {
-                    print!("{}", r.to_string());
-                }
-                OutputFormat::Json => {
-                    print!("{}", r.to_json());
-                }
-            }
         }
         "login" => {
             // check whether username and password are provided
             if app_config.username.is_none() || app_config.password.is_none() {
-                panic!("Username and password must be provided");
+                println!("Username and password must be provided");
+                std::process::exit(1);
             }
 
-            // In some rare cases, http hijacking (redirection) must be triggered once to kick off BAS response
-            if app_config.redirect {
-                let resp = client.access_redirect_host();
-                let status = match resp {
-                    Ok(status) => status,
-                    Err(e) => {
-                        panic!("Failed to access captive portal: {}", e);
-                    }
-                };
-
-                if status {
-                    match app_config.output {
-                        OutputFormat::Plain => {
-                            println!(
-                                "Portal testing returned 204 code, which indicates you're online."
-                            );
-                        }
-                        _ => {}
-                    }
+            match login(
+                &client,
+                app_config.redirect,
+                matches!(app_config.output, OutputFormat::Plain),
+            ) {
+                Ok(r) => {
+                    resp = Some(r);
                 }
-            }
-
-            let resp = client.query();
-            let qr = match resp {
-                Ok(qr) => qr,
                 Err(e) => {
-                    panic!("Failed to query: {}", e);
+                    err = Some(e);
                 }
             };
-
-            let resp = client.get_challenge(&qr.online_ip);
-            let cr = match resp {
-                Ok(cr) => cr,
-                Err(e) => {
-                    panic!("Failed to get challenge: {}", e);
-                }
-            };
-
-            let resp = client.get_ac_id();
-            let ac_id = match resp {
-                Ok(ac_id) => ac_id,
-                Err(e) => {
-                    panic!("Failed to get ac_id: {}", e);
-                }
-            };
-
-            let resp = client.login(&cr.challenge, &qr.online_ip, &ac_id);
-            let lr = match resp {
-                Ok(lr) => lr,
-                Err(e) => {
-                    panic!("Failed to login: {}", e);
-                }
-            };
-
-            match app_config.output {
-                OutputFormat::Plain => {
-                    print!("{}", lr.to_string());
-                }
-                OutputFormat::Json => {
-                    print!("{}", lr.to_json());
-                }
-            }
         }
         "logout" => {
             if app_config.username.is_none() {
-                panic!("Username must be provided");
+                println!("Username must be provided");
+                std::process::exit(1);
             }
-            let resp = client.query();
-            let qr = match resp {
-                Ok(qr) => qr,
+
+            match logout(&client) {
+                Ok(r) => {
+                    resp = Some(r);
+                }
                 Err(e) => {
-                    panic!("Failed to query: {}", e);
+                    err = Some(e);
                 }
             };
-
-            let resp = client.get_ac_id();
-            let ac_id = match resp {
-                Ok(ac_id) => ac_id,
-                Err(e) => {
-                    panic!("Failed to get ac_id: {}", e);
-                }
-            };
-
-            let resp = client.logout(&qr.online_ip, &ac_id);
-            let lr = match resp {
-                Ok(lr) => lr,
-                Err(e) => {
-                    panic!("Failed to logout: {}", e);
-                }
-            };
-
-            match app_config.output {
-                OutputFormat::Plain => {
-                    print!("{}", lr.to_string());
-                }
-                OutputFormat::Json => {
-                    print!("{}", lr.to_json());
-                }
-            }
         }
         _ => {}
     }
+
+    match app_config.output {
+        OutputFormat::Plain => {
+            if err.is_some() {
+                println!("{}", err.unwrap());
+                std::process::exit(1);
+            }
+            if resp.is_some() {
+                print!("{}", resp.unwrap().to_string());
+            }
+        }
+        OutputFormat::Json => {
+            if err.is_some() {
+                let error_obj = object! {
+                "error" => err.unwrap().to_string()};
+                print!("{}", error_obj.dump());
+                std::process::exit(1);
+            }
+            if resp.is_some() {
+                print!("{}", resp.unwrap().to_json());
+            }
+        }
+    }
+}
+
+fn query(client: &SRUNClient) -> Result<Box<dyn SRUNResponse>, Box<dyn Error>> {
+    let r = client.query()?;
+    Ok(Box::new(r))
+}
+
+fn login(
+    client: &SRUNClient,
+    redirect: bool,
+    output_warning: bool,
+) -> Result<Box<dyn SRUNResponse>, Box<dyn Error>> {
+    // In some rare cases, http hijacking (redirection) must be triggered once to kick off BAS response
+    if redirect {
+        let status = client.access_redirect_host()?;
+
+        if status && output_warning {
+            println!("Portal testing returned 204 code, which indicates you're online.");
+        }
+    }
+
+    let r = client.query()?;
+    let cr = client.get_challenge(&r.online_ip)?;
+    let ac_id = client.get_ac_id()?;
+    let lr = client.login(&cr.challenge, &r.online_ip, &ac_id)?;
+    Ok(Box::new(lr))
+}
+
+fn logout(client: &SRUNClient) -> Result<Box<dyn SRUNResponse>, Box<dyn Error>> {
+    let r = client.query()?;
+    let ac_id = client.get_ac_id()?;
+    let lr = client.logout(&r.online_ip, &ac_id)?;
+    Ok(Box::new(lr))
 }

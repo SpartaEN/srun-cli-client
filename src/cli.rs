@@ -96,14 +96,16 @@ pub fn process_cli() -> AppConfig {
     match app_config.server {
         Some(_) => {}
         None => {
-            panic!("Server not specified, exiting");
+            println!("Server must be provided");
+            std::process::exit(1);
         }
     }
 
     match matches.subcommand_name() {
         Some(some) => app_config.command = Some(String::from(some)),
         None => {
-            panic!("No subcommand specified, exiting");
+            println!("Command must be provided");
+            std::process::exit(1);
         }
     }
 
